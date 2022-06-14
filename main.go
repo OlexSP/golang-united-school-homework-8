@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+type Arguments map[string]string
+
 func Perform(args Arguments, writer io.Writer) error {
 }
 
