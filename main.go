@@ -191,7 +191,7 @@ func removeUser(args Arguments, writer io.Writer) error {
 		}
 	}
 	if !exist {
-		msg := fmt.Sprintf("Itev with id %v not found", args["id"])
+		msg := fmt.Sprintf("Item with id %v not found", args["id"])
 		_, err = writer.Write([]byte(msg))
 		if err != nil {
 			return fmt.Errorf("an error has occurred:%w", err)
