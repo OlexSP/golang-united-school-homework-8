@@ -51,8 +51,8 @@ func Perform(args Arguments, writer io.Writer) error {
 		return addToUserList(args, writer)
 	case "findById":
 		return FindByID(args, writer)
-	//case "remove":
-	//	return removeUser(args, writer)
+	case "remove":
+		return removeUser(args, writer)
 	default:
 		return fmt.Errorf("Operation %s not allowed!", args["operation"])
 	}
@@ -109,12 +109,16 @@ func addToUserList(args Arguments, writer io.Writer) error {
 	// ID duplicate check
 	for _, v := range userList1 {
 		if v.Id == user1.Id {
-			return fmt.Errorf("Item with id %s already exists", user1.Id)
+			msg := fmt.Sprintf("Item with id %v already exists", user1.Id)
+			_, err = writer.Write([]byte(msg))
+			if err != nil {
+				return fmt.Errorf("an error has occurred:%w", err)
+			}
+			return nil
 		}
 	}
 
 	// adding item to the file
-	//userList1 = append(userList1, user1)
 
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -159,10 +163,45 @@ func FindByID(args Arguments, writer io.Writer) error {
 
 }
 
-//func removeUser(args, writer) error {
-//
-//	return nil
-//}
+func removeUser(args Arguments, writer io.Writer) error {
+	if args["id"] == "" {
+		return errors.New("-id flag has to be specified")
+	}
+	// read user list file & unmarshal it to the userList{}
+	userList1 := userList{}
+	byteSlice, err := os.ReadFile(args["fileName"])
+	if err != nil {
+		return fmt.Errorf("file reading error:%w", err)
+	}
+	err = json.Unmarshal(byteSlice, &userList1)
+	if err != nil {
+		return fmt.Errorf("an error has occurred:%w", err)
+	}
+	// find user
+	var exist bool
+	for i, user := range userList1 {
+		if user.Id == args["id"] {
+			exist = true
+			userList1 = append(userList1[:i], userList1[i+1:]...)
+			byteSlice, err = json.Marshal(userList1)
+			if err != nil {
+				return fmt.Errorf("an error has occurred:%w", err)
+			}
+			break
+		}
+	}
+	if !exist {
+		msg := fmt.Sprintf("Itev with id %v not found", args["id"])
+		_, err = writer.Write([]byte(msg))
+		if err != nil {
+			return fmt.Errorf("an error has occurred:%w", err)
+		}
+		return nil
+	}
+
+	err = os.WriteFile(args["fileName"], byteSlice, 0644)
+	return err
+}
 
 func main() {
 	a := argsParsing()
