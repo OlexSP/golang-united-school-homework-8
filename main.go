@@ -51,8 +51,8 @@ func Perform(args Arguments, writer io.Writer) error {
 		return addToUserList(args, writer)
 	case "findById":
 		return FindByID(args, writer)
-	case "remove":
-		return removeUser(args, writer)
+	//case "remove":
+	//	return removeUser(args, writer)
 	default:
 		return fmt.Errorf("Operation %s not allowed!", args["operation"])
 	}
@@ -159,10 +159,10 @@ func FindByID(args Arguments, writer io.Writer) error {
 
 }
 
-func removeUser(args, writer) error {
-
-	return nil
-}
+//func removeUser(args, writer) error {
+//
+//	return nil
+//}
 
 func main() {
 	a := argsParsing()
