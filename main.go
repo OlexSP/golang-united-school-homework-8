@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 )
 
 type Arguments map[string]string
@@ -48,10 +49,10 @@ func Perform(args Arguments, writer io.Writer) error {
 		return ReadUserList(fileName, writer)
 	case "add":
 		return addToUserList(args, writer)
-	/*case "findById":
+	case "findById":
 		return FindByID(args, writer)
 	case "remove":
-		return removeUser(args, writer)*/
+		return removeUser(args, writer)
 	default:
 		return fmt.Errorf("Operation %s not allowed!", args["operation"])
 	}
@@ -88,9 +89,12 @@ func addToUserList(args Arguments, writer io.Writer) error {
 		return fmt.Errorf("an error has occurred:%w", err)
 	}
 	// simple validator
-	if user1.Id == "" || user1.Email == "" || user1.Age < 6 {
+	pattern := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	matches := pattern.MatchString(user1.Email)
+	if user1.Id == "" || !matches || user1.Age < 6 {
 		return errors.New("item data is not valid")
 	}
+
 	// read user list file & unmarshal it to the userList{}
 	userList1 := userList{}
 	byteSlice, err := os.ReadFile(fileName)
@@ -105,7 +109,7 @@ func addToUserList(args Arguments, writer io.Writer) error {
 	// ID duplicate check
 	for _, v := range userList1 {
 		if v.Id == user1.Id {
-			return errors.New("item ID is already exist")
+			return fmt.Errorf("Item with id %s already exists", user1.Id)
 		}
 	}
 
@@ -124,17 +128,41 @@ func addToUserList(args Arguments, writer io.Writer) error {
 	return nil
 }
 
-/*func FindByID(id string, fileName string, writer io.Writer) error {
-	byteSlice, err := os.ReadFile(fileName)
-	if err != nil {
-		return fmt.Errorf("some troubles with the file: %q", err)
+func FindByID(args Arguments, writer io.Writer) error {
+	if args["id"] == "" {
+		return errors.New("-id flag has to be specified")
 	}
-	//fmt.Println(string(data))
+	// read user list file & unmarshal it to the userList{}
+	userList1 := userList{}
+	byteSlice, err := os.ReadFile(args["fileName"])
+	if err != nil {
+		return fmt.Errorf("file reading error:%w", err)
+	}
+	err = json.Unmarshal(byteSlice, &userList1)
+	if err != nil {
+		return fmt.Errorf("an error has occurred:%w", err)
+	}
+	// find user
+	var userBiteSlice []byte
+	for _, user := range userList1 {
+		if user.Id == args["id"] {
+			userBiteSlice, err = json.Marshal(user)
+			break
+		}
+	}
+	//passing byteSlice to writer io
+	_, err = writer.Write(userBiteSlice)
+	if err != nil {
+		return fmt.Errorf("an error has occurred:%w", err)
+	}
+	return nil
+
 }
 
-removeUser(args, writer)*/
+func removeUser(args, writer) error {
 
-// get  arguments from the console
+	return nil
+}
 
 func main() {
 	a := argsParsing()
