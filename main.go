@@ -46,11 +46,11 @@ func Perform(args Arguments, writer io.Writer) error {
 	case "":
 		return errors.New("-operation flag has to be specified")
 	case "list":
-		return ReadUserList(fileName, writer)
+		return readUserList(fileName, writer)
 	case "add":
 		return addToUserList(args, writer)
 	case "findById":
-		return FindByID(args, writer)
+		return findByID(args, writer)
 	case "remove":
 		return removeUser(args, writer)
 	default:
@@ -59,8 +59,8 @@ func Perform(args Arguments, writer io.Writer) error {
 
 }
 
-// ReadUserList retrieve list from the users.json file and print it to the io.Writer stream
-func ReadUserList(fileName string, writer io.Writer) error {
+// readUserList retrieve list from the users.json file and print it to the io.Writer stream
+func readUserList(fileName string, writer io.Writer) error {
 	//reading file into byteSlice
 	byteSlice, err := os.ReadFile(fileName)
 	if err != nil {
@@ -97,15 +97,16 @@ func addToUserList(args Arguments, writer io.Writer) error {
 
 	// read user list file & unmarshal it to the userList{}
 	userList1 := userList{}
-	byteSlice, err := os.ReadFile(fileName)
+	f, err := os.OpenFile(fileName, os.O_RDONLY|os.O_CREATE, 0644)
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+	byteSlice, err := io.ReadAll(f)
 	if err != nil {
 		return fmt.Errorf("file reading error:%w", err)
 	}
-	err = json.Unmarshal(byteSlice, &userList1)
-	if err != nil {
-		return fmt.Errorf("an error has occurred:%w", err)
-	}
-
+	_ = json.Unmarshal(byteSlice, &userList1)
 	// ID duplicate check
 	for _, v := range userList1 {
 		if v.Id == user1.Id {
@@ -119,20 +120,16 @@ func addToUserList(args Arguments, writer io.Writer) error {
 	}
 
 	// adding item to the file
-
-	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	userList1 = append(userList1, user1)
+	byteSlice, err = json.Marshal(userList1)
 	if err != nil {
 		return fmt.Errorf("an error has occurred:%w", err)
 	}
-	defer f.Close()
-
-	if _, err := f.Write([]byte(item)); err != nil {
-		return fmt.Errorf("an error has occurred:%w", err)
-	}
-	return nil
+	err = os.WriteFile(args["fileName"], byteSlice, 0644)
+	return err
 }
 
-func FindByID(args Arguments, writer io.Writer) error {
+func findByID(args Arguments, writer io.Writer) error {
 	if args["id"] == "" {
 		return errors.New("-id flag has to be specified")
 	}
