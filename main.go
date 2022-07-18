@@ -95,10 +95,10 @@ func addToUserList(args Arguments, writer io.Writer) error {
 		return errors.New("item data is not valid")
 	}
 
-	// read user list file & unmarshal it to the userList{}
+	// read user list file & unmarshal it to the userList{}. Create file, if it is not exist.
 	userList1 := userList{}
 	f, err := os.OpenFile(fileName, os.O_RDONLY|os.O_CREATE, 0644)
-	defer f.Close()
+	//defer f.Close()  - useless  os.WriteFile closes the file.
 	if err != nil {
 		return err
 	}
